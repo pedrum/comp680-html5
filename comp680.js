@@ -22,6 +22,15 @@ function namespace(namespaceString) {
 
 var Comp680 = namespace('Comp680');
 
+Comp680.componentToHex = function (c) {
+    var hex = c.toString(16);
+    return hex.length == 1 ? "0" + hex : hex;
+};
+
+Comp680.rgbToHex = function (r, g, b) {
+    return "#" + Comp680.componentToHex(r) + Comp680.componentToHex(g) + Comp680.componentToHex(b);
+};
+
 Comp680.NoteFrequency = {
     "C0": 16.35,
     "C#0": 17.32,
@@ -167,7 +176,10 @@ Comp680.NoteFrequency = {
     "Eb8": 4978.03
 }
 
-Comp680.Notes = ['C7', 'A6', 'G6', 'F6', 'D6', 'C6', 'A5', 'G5', 'F5', 'D5', 'C5', 'A4', 'G4', 'F4', 'D4', 'C4'];Comp680.Rect = function (x, y, w, h) {
+Comp680.Notes = ['C7', 'A6', 'G6', 'F6', 'D6', 'C6', 'A5', 'G5', 'F5', 'D5', 'C5', 'A4', 'G4', 'F4', 'D4', 'C4'];
+Comp680.BRIGHTNESS_PLAYING = 255;
+Comp680.BRIGHTNESS_ON = 125;
+Comp680.BRIGHTNESS_OFF = 31; Comp680.BRIGHTNESS_ADD = 40; Comp680.Rect = function (x, y, w, h) {
     this.x = x || 0;
     this.y = y || 0;
     this.w = w || 0;
@@ -198,7 +210,29 @@ Comp680.Surface.prototype.drawRect = function (rect, color) {
 Comp680.Model = function () {
     this.gridRows = 19;
     this.gridColumns = 16;
-    this.grid = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ,0],
+    this.grid = [
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]];
+    
+    this.brightness = [
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -220,6 +254,12 @@ Comp680.Model = function () {
 
     this.gridSize = 20;
     this.gridPadding = 5;
+
+    for (var r = 0; r < this.gridRows; r++) {
+        for (var c = 0; c < this.gridColumns; c++) {
+            this.brightness[r][c] = 51;
+        }
+    }
 };
 
 Comp680.Controller = function (canvas) {
@@ -274,31 +314,46 @@ Comp680.Controller.prototype.click = function (x, y) {
         var row = Math.floor(y / 25);
 
         this.model.grid[row][column]++;
-        this.model.grid[row][column] %= 3;
+        this.model.grid[row][column] %= 2;
+        if (this.model.grid[row][column] === 1) 
+            this.model.brightness[row][column] = Comp680.BRIGHTNESS_ON;
+        else
+            this.model.brightness[row][column] = Comp680.BRIGHTNESS_OFF;
         console.log(this.tick + ': (' + x + ', ' + y + ') = (' + row + 'x' + column + ') = ' + this.model.grid[row][column]);
     }
 };
 
 Comp680.Controller.prototype.draw = function () {
     //this.surface.drawRect(new Comp680.Rect(0, 0, this.surface.w, this.surface.h), 'black');    
-    
+
     var model = this.model;
     var r, c;  //Row and column index
     var x = model.gridPadding, y = model.gridPadding;  //cursor position
-
+    /*
     for (c = 0; c < model.gridColumns; c++) {
-        var color = '#999999'
-        if (c === this.beat)
-            color = 'white';
+    var color = '#999999'
+    if (c === this.beat)
+    color = 'white';
 
+    for (r = 0; r < model.gridRows; r++) {
+    if (model.grid[r][c] === 1)
+    this.surface.drawRect(new Comp680.Rect(x, y, model.gridSize, model.gridSize), color);
+    else
+    this.surface.drawRect(new Comp680.Rect(x, y, model.gridSize, model.gridSize), '#333333');
+    y += model.gridSize + model.gridPadding;
+    }
+
+    y = model.gridPadding;
+    x += model.gridSize + model.gridPadding;
+    }
+    */
+    for (c = 0; c < model.gridColumns; c++) {
         for (r = 0; r < model.gridRows; r++) {
-            if (model.grid[r][c] === 1)
-                this.surface.drawRect(new Comp680.Rect(x, y, model.gridSize, model.gridSize), color);
-            else
-                this.surface.drawRect(new Comp680.Rect(x, y, model.gridSize, model.gridSize), '#333333');
+            var a = this.model.brightness[r][c];
+            var color = Comp680.rgbToHex(a, a, a);
+            this.surface.drawRect(new Comp680.Rect(x, y, model.gridSize, model.gridSize), color);
             y += model.gridSize + model.gridPadding;
         }
-
         y = model.gridPadding;
         x += model.gridSize + model.gridPadding;
     }
@@ -416,6 +471,33 @@ Comp680.Controller.prototype.update = function () {
         this.beat++;
         this.beat %= 16;
         this.play();
+        for (var r = 0; r < this.model.gridRows; r++) {
+            if (this.model.grid[r][this.beat] === 1) {
+                this.model.brightness[r][this.beat] = Comp680.BRIGHTNESS_PLAYING;
+                this.model.brightness[r - 1][this.beat] += Comp680.BRIGHTNESS_ADD;
+                this.model.brightness[r - 1][this.beat + 1] += Comp680.BRIGHTNESS_ADD;
+                this.model.brightness[r][this.beat + 1] += Comp680.BRIGHTNESS_ADD;
+                this.model.brightness[r + 1][this.beat + 1] += Comp680.BRIGHTNESS_ADD;
+                this.model.brightness[r + 1][this.beat] += Comp680.BRIGHTNESS_ADD;
+                this.model.brightness[r + 1][this.beat - 1] += Comp680.BRIGHTNESS_ADD;
+                this.model.brightness[r][this.beat - 1] += Comp680.BRIGHTNESS_ADD;
+                this.model.brightness[r - 1][this.beat - 1] += Comp680.BRIGHTNESS_ADD;
+
+                this.model.brightness[r - 2][this.beat] += Comp680.BRIGHTNESS_ADD / 2;
+                this.model.brightness[r + 2][this.beat] += Comp680.BRIGHTNESS_ADD / 2;
+                this.model.brightness[r][this.beat - 2] += Comp680.BRIGHTNESS_ADD / 2;
+                this.model.brightness[r][this.beat + 2] += Comp680.BRIGHTNESS_ADD / 2;
+            }
+        }
+    }
+
+    for (var r = 0; r < this.model.gridRows; r++) {
+        for (var c = 0; c < this.model.gridColumns; c++) {
+            if (this.model.grid[r][c] === 1 && this.model.brightness[r][c] > Comp680.BRIGHTNESS_ON)
+                this.model.brightness[r][c] -= 1;
+            else if (this.model.grid[r][c] === 0 && this.model.brightness[r][c] > Comp680.BRIGHTNESS_OFF)
+                this.model.brightness[r][c] -= 1;
+        }
     }
 };
 
