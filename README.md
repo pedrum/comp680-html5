@@ -1,2 +1,2 @@
-comp680-html5
+HTML5 Web Audio Demonstration
 =============
